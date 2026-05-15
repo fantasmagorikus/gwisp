@@ -1,0 +1,4 @@
+f481741180ed79098e1139a3b92408d214bbb10aa54ba1a701a8e3f3ceb561e7  Gwisp-Setup.exe
+748e537285dea6c45f1fdb2fc4288a7615b4ee3b5b9192a012069dbd78ec250b  Gwisp-Main-Windows.zip
+a64bf09b81f265c28033557b14b7a8d108acfb5ccf70bcee9a0a3333b9bd1ebe  Gwisp-SyncOCR-Windows.zip
+c7cc0859a15927b4fb35b938bf930b3d6f78ce50543fb998ef9c0e6a6297aeb5  Gwisp-Setup.README.txt

@@ -56,6 +56,7 @@
 | Gwisp Setup EXE | [Download Windows setup EXE](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Setup.exe) | Alpha build 1.0.3 guided installer with language, Main/Sync OCR/both, and AI provider selection |
 | Gwisp Main | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Main-Windows.zip) | Alpha build 1.0.3 main OCR + selectable AI provider desktop app |
 | Gwisp Sync OCR | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-SyncOCR-Windows.zip) | Alpha build 1.0.3 secondary-machine capture companion |
+| SHA-256 checksums | [Download SHA256SUMS.txt](https://github.com/fantasmagorikus/gwisp/releases/latest/download/SHA256SUMS.txt) | Integrity hashes for the public release files |
 
 > Run `Gwisp-Setup.exe` for the guided installer. The ZIP downloads
 > are still available as manual fallback packages. The installer and both
@@ -87,9 +88,11 @@
 - The default installer path does not create Desktop/Start Menu shortcuts, which
   avoids a common shortcut/COM false-positive path. Use the `Run-Gwisp-*.bat`
   launchers created in the selected install folder.
-- The EXE is not code-signed yet. Windows SmartScreen or "unknown publisher"
-  prompts can still appear for public downloads until the project is signed with
-  a trusted code-signing certificate.
+- The EXE verifies the SHA-256 hash of downloaded ZIP packages before extracting
+  them.
+- Public Windows distribution should use Authenticode signing with a trusted
+  certificate and timestamp. Until a release is signed and has reputation,
+  Windows Defender SmartScreen or "unknown publisher" prompts can still appear.
 
 ## AI Provider Options
 
@@ -454,6 +457,16 @@ Build the ZIPs and the setup EXE:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\packaging\windows\Build-WindowsInstaller.ps1
 ```
+
+Build a public signed installer:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\windows\Build-WindowsInstaller.ps1 -Sign -CertificateThumbprint YOUR_CERT_THUMBPRINT -RequireSigned
+```
+
+The signed build also writes `downloads/SHA256SUMS.txt`. For public releases,
+use a trusted Authenticode certificate, keep the signing identity consistent, and
+submit any false-positive detection to Microsoft Security Intelligence.
 
 ## Project Structure
 

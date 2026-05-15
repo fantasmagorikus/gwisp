@@ -13,6 +13,13 @@ The EXE is not code-signed yet. Windows SmartScreen or unknown-publisher prompts
 can still appear for public downloads until a trusted code-signing certificate
 is used.
 
+For public Windows distribution, build with Authenticode signing:
+
+powershell -ExecutionPolicy Bypass -File .\packaging\windows\Build-WindowsInstaller.ps1 -Sign -CertificateThumbprint YOUR_CERT_THUMBPRINT -RequireSigned
+
+The EXE verifies SHA-256 hashes before extracting downloaded ZIP packages.
+Release hashes are published in SHA256SUMS.txt.
+
 WARNING
 The developer of this project does not recommend using Gwisp in evaluated
 certifications, real exams, paid graded activities, or activities where outside

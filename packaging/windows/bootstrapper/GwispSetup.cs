@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -34,7 +35,7 @@ namespace GwispSetup
         }
     }
 
-    internal sealed class InstallerForm : Form
+    internal sealed partial class InstallerForm : Form
     {
         public const string DefaultReleaseBaseUrl =
             "https://github.com/fantasmagorikus/gwisp/releases/latest/download";
@@ -523,6 +524,7 @@ namespace GwispSetup
             string zipPath = ResolvePackage(zipName, workRoot);
             string extractDir = Path.Combine(workRoot, Path.GetFileNameWithoutExtension(zipName));
 
+            VerifyPackageHash(zipPath, zipName);
             Directory.CreateDirectory(extractDir);
             ExtractZipSafely(zipPath, extractDir);
 
@@ -570,6 +572,48 @@ namespace GwispSetup
         private static string BuildPackageUrl(string zipName)
         {
             return DefaultReleaseBaseUrl.TrimEnd('/') + "/" + zipName;
+        }
+
+        private void VerifyPackageHash(string zipPath, string zipName)
+        {
+            string expectedHash = GetExpectedPackageHash(zipName);
+            if (string.IsNullOrWhiteSpace(expectedHash))
+            {
+                return;
+            }
+
+            string actualHash = ComputeSha256(zipPath);
+            if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(Translate("hashMismatch") + ": " + zipName);
+            }
+
+            Log(Translate("hashVerified") + ": " + zipName);
+        }
+
+        private static string GetExpectedPackageHash(string zipName)
+        {
+            if (string.Equals(zipName, MainZipName, StringComparison.OrdinalIgnoreCase))
+            {
+                return MainZipSha256;
+            }
+
+            if (string.Equals(zipName, SyncZipName, StringComparison.OrdinalIgnoreCase))
+            {
+                return SyncZipSha256;
+            }
+
+            return string.Empty;
+        }
+
+        private static string ComputeSha256(string filePath)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            using (FileStream stream = File.OpenRead(filePath))
+            {
+                byte[] hash = sha256.ComputeHash(stream);
+                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            }
         }
 
         private static void ExtractZipSafely(string zipPath, string extractDir)
@@ -800,6 +844,10 @@ namespace GwispSetup
                         return "Using local package";
                     case "downloading":
                         return "Downloading";
+                    case "hashVerified":
+                        return "SHA-256 verified";
+                    case "hashMismatch":
+                        return "Package integrity check failed";
                     case "powershellReturned":
                         return "PowerShell returned code";
                     case "errorPrefix":
@@ -879,6 +927,10 @@ namespace GwispSetup
                         return "Lokales Paket verwenden";
                     case "downloading":
                         return "Herunterladen";
+                    case "hashVerified":
+                        return "SHA-256 geprueft";
+                    case "hashMismatch":
+                        return "Paket-Integritaetspruefung fehlgeschlagen";
                     case "powershellReturned":
                         return "PowerShell gab Code zurueck";
                     case "errorPrefix":
@@ -956,6 +1008,10 @@ namespace GwispSetup
                     return "Usando pacote local";
                 case "downloading":
                     return "Baixando";
+                case "hashVerified":
+                    return "SHA-256 verificado";
+                case "hashMismatch":
+                    return "Falha na verificacao de integridade do pacote";
                 case "powershellReturned":
                     return "PowerShell retornou codigo";
                 case "errorPrefix":
