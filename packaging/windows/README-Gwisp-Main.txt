@@ -24,7 +24,8 @@ Requirements
   - Local mode: Ollama installed on the main machine, with the configured model
     downloaded.
   - Cloud mode: llm_provider set to cloud, cloud_api_url/cloud_model configured,
-    and GWISP_CLOUD_API_KEY set before running Gwisp.
+    and GWISP_CLOUD_API_KEY set before running Gwisp, or a cloud_api_key value
+    saved in local config.json by the installer.
 
 Install
 1. Extract this ZIP.
@@ -32,6 +33,9 @@ Install
 3. Run:
    powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en
 4. Open Run-Gwisp-Main.bat inside the install folder shown at the end.
+
+Manual Cloud API example:
+   powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -LlmProvider cloud -CloudApiUrl https://api.openai.com/v1/chat/completions -CloudModel gpt-4.1-mini
 
 Optional shortcut install:
    powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -CreateShortcuts

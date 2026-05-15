@@ -45,6 +45,14 @@ Install options:
   for local Ollama or a cloud AI API provider.
 - Somente Sync OCR: installs only the secondary-machine capture companion.
 
+AI provider options in the EXE:
+
+- Local Ollama is the default for Gwisp Main.
+- Cloud API configures llm_provider=cloud, cloud_api_url, and cloud_model.
+- You can type a cloud API key during install, or leave it blank and set
+  GWISP_CLOUD_API_KEY before running Gwisp. A typed key is saved only in the
+  local config.json inside the selected install folder.
+
 Manual install option:
 
 1. Download and extract Gwisp-Main-Windows.zip or Gwisp-SyncOCR-Windows.zip.
@@ -52,6 +60,10 @@ Manual install option:
 
 powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en
 powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-SyncOCR.ps1 -Language en
+
+Manual cloud example:
+
+powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -LlmProvider cloud -CloudApiUrl https://api.openai.com/v1/chat/completions -CloudModel gpt-4.1-mini
 
 Optional shortcuts:
 
@@ -61,7 +73,8 @@ AI provider options for the main app:
 
 - Local Ollama is the default. Install Ollama and download the configured model.
 - Cloud API mode uses llm_provider=cloud, cloud_api_url, cloud_model, and
-  GWISP_CLOUD_API_KEY. Do not commit real API keys.
+  GWISP_CLOUD_API_KEY or the local config.json value created by the installer.
+  Do not commit real API keys.
 
 The EXE first looks for the ZIP packages beside itself. If they are not there,
 it downloads them from the latest GitHub release:

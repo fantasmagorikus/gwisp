@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -60,6 +61,16 @@ namespace GwispSetup
         private readonly RadioButton installBoth;
         private readonly RadioButton installMain;
         private readonly RadioButton installSync;
+        private readonly GroupBox providerGroup;
+        private readonly RadioButton providerOllama;
+        private readonly RadioButton providerCloud;
+        private readonly Label cloudUrlLabel;
+        private readonly TextBox cloudUrlText;
+        private readonly Label cloudModelLabel;
+        private readonly TextBox cloudModelText;
+        private readonly Label cloudKeyLabel;
+        private readonly TextBox cloudKeyText;
+        private readonly Label cloudKeyNotice;
         private readonly GroupBox destinationGroup;
         private readonly TextBox installRoot;
         private readonly Button browseButton;
@@ -78,7 +89,7 @@ namespace GwispSetup
             Icon = appIcon;
             ShowIcon = true;
             Width = 690;
-            Height = 620;
+            Height = 760;
             Font = new Font("Tahoma", 8F, FontStyle.Regular);
             BackColor = XpControl;
             ForeColor = XpText;
@@ -147,15 +158,53 @@ namespace GwispSetup
             Controls.Add(choiceGroup);
 
             installBoth = CreateRadioButton("", 18, 26, true);
+            installBoth.CheckedChanged += InstallChoiceChanged;
             choiceGroup.Controls.Add(installBoth);
 
             installMain = CreateRadioButton("", 18, 56, false);
+            installMain.CheckedChanged += InstallChoiceChanged;
             choiceGroup.Controls.Add(installMain);
 
             installSync = CreateRadioButton("", 18, 86, false);
+            installSync.CheckedChanged += InstallChoiceChanged;
             choiceGroup.Controls.Add(installSync);
 
-            destinationGroup = CreateGroupBox("", 22, 288, 626, 78);
+            providerGroup = CreateGroupBox("", 22, 288, 626, 134);
+            Controls.Add(providerGroup);
+
+            providerOllama = CreateRadioButton("", 18, 24, true);
+            providerOllama.CheckedChanged += ProviderChanged;
+            providerGroup.Controls.Add(providerOllama);
+
+            providerCloud = CreateRadioButton("", 18, 52, false);
+            providerCloud.CheckedChanged += ProviderChanged;
+            providerGroup.Controls.Add(providerCloud);
+
+            cloudUrlLabel = CreatePlainLabel("", 36, 82, 82, 18);
+            providerGroup.Controls.Add(cloudUrlLabel);
+
+            cloudUrlText = CreateTextBox(126, 78, 272);
+            cloudUrlText.Text = "https://api.openai.com/v1/chat/completions";
+            providerGroup.Controls.Add(cloudUrlText);
+
+            cloudModelLabel = CreatePlainLabel("", 412, 82, 44, 18);
+            providerGroup.Controls.Add(cloudModelLabel);
+
+            cloudModelText = CreateTextBox(462, 78, 140);
+            cloudModelText.Text = "gpt-4.1-mini";
+            providerGroup.Controls.Add(cloudModelText);
+
+            cloudKeyLabel = CreatePlainLabel("", 36, 108, 82, 18);
+            providerGroup.Controls.Add(cloudKeyLabel);
+
+            cloudKeyText = CreateTextBox(126, 104, 272);
+            cloudKeyText.UseSystemPasswordChar = true;
+            providerGroup.Controls.Add(cloudKeyText);
+
+            cloudKeyNotice = CreatePlainLabel("", 412, 100, 190, 30);
+            providerGroup.Controls.Add(cloudKeyNotice);
+
+            destinationGroup = CreateGroupBox("", 22, 434, 626, 78);
             Controls.Add(destinationGroup);
 
             installRoot = new TextBox();
@@ -174,7 +223,7 @@ namespace GwispSetup
             browseButton.Click += BrowseButtonClick;
             destinationGroup.Controls.Add(browseButton);
 
-            progressGroup = CreateGroupBox("", 22, 378, 626, 128);
+            progressGroup = CreateGroupBox("", 22, 524, 626, 128);
             Controls.Add(progressGroup);
 
             progressBar = new ProgressBar();
@@ -200,7 +249,7 @@ namespace GwispSetup
             logBox.Font = new Font("Consolas", 9F, FontStyle.Regular);
             progressGroup.Controls.Add(logBox);
 
-            Panel statusBar = CreateSunkenPanel(22, 516, 414, 24);
+            Panel statusBar = CreateSunkenPanel(22, 662, 414, 24);
             Controls.Add(statusBar);
 
             statusLabel = new Label();
@@ -211,7 +260,7 @@ namespace GwispSetup
             statusLabel.BackColor = XpControl;
             statusBar.Controls.Add(statusLabel);
 
-            installButton = CreateXpButton("", 458, 512, 190, 30);
+            installButton = CreateXpButton("", 458, 658, 190, 30);
             installButton.Font = new Font("Tahoma", 8F, FontStyle.Bold);
             installButton.Click += InstallButtonClick;
             Controls.Add(installButton);
@@ -219,7 +268,7 @@ namespace GwispSetup
             Label signature = new Label();
             signature.Text = SignatureText;
             signature.Left = 386;
-            signature.Top = 544;
+            signature.Top = 690;
             signature.Width = 262;
             signature.Height = 18;
             signature.TextAlign = ContentAlignment.MiddleRight;
@@ -229,6 +278,7 @@ namespace GwispSetup
             Controls.Add(signature);
 
             ApplyLanguage();
+            UpdateProviderPanelState();
         }
 
         private void LanguageSelectorChanged(object sender, EventArgs e)
@@ -260,6 +310,13 @@ namespace GwispSetup
             installBoth.Text = Translate("installBoth");
             installMain.Text = Translate("installMain");
             installSync.Text = Translate("installSync");
+            providerGroup.Text = Translate("providerGroup");
+            providerOllama.Text = Translate("providerOllama");
+            providerCloud.Text = Translate("providerCloud");
+            cloudUrlLabel.Text = Translate("cloudUrl");
+            cloudModelLabel.Text = Translate("cloudModel");
+            cloudKeyLabel.Text = Translate("cloudKey");
+            cloudKeyNotice.Text = Translate("cloudKeyNotice");
             destinationGroup.Text = Translate("destination");
             progressGroup.Text = Translate("progress");
             installButton.Text = Translate("installButton");
@@ -268,6 +325,16 @@ namespace GwispSetup
             {
                 statusLabel.Text = Translate("ready");
             }
+        }
+
+        private void InstallChoiceChanged(object sender, EventArgs e)
+        {
+            UpdateProviderPanelState();
+        }
+
+        private void ProviderChanged(object sender, EventArgs e)
+        {
+            UpdateProviderPanelState();
         }
 
         private void BrowseButtonClick(object sender, EventArgs e)
@@ -292,6 +359,25 @@ namespace GwispSetup
                 return;
             }
 
+            string llmProvider = providerCloud.Checked ? "cloud" : "ollama";
+            string cloudApiUrl = cloudUrlText.Text.Trim();
+            string cloudModel = cloudModelText.Text.Trim();
+            string cloudApiKey = cloudKeyText.Text.Trim();
+            if (InstallsMainApp() && string.Equals(llmProvider, "cloud", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!Uri.IsWellFormedUriString(cloudApiUrl, UriKind.Absolute))
+                {
+                    ShowInstallerDialog(Translate("setupTitle"), Translate("invalidCloudUrl"));
+                    return;
+                }
+
+                if (cloudModel.Length == 0)
+                {
+                    ShowInstallerDialog(Translate("setupTitle"), Translate("missingCloudModel"));
+                    return;
+                }
+            }
+
             SetInstallingState(true);
             logBox.Clear();
 
@@ -301,7 +387,7 @@ namespace GwispSetup
             {
                 try
                 {
-                    RunInstall(choice, root, selectedLanguage);
+                    RunInstall(choice, root, selectedLanguage, llmProvider, cloudApiUrl, cloudModel, cloudApiKey);
                     Ui(delegate()
                     {
                         statusLabel.Text = Translate("doneStatus");
@@ -344,7 +430,36 @@ namespace GwispSetup
             return InstallChoice.Both;
         }
 
-        private void RunInstall(InstallChoice choice, string root, string selectedLanguage)
+        private bool InstallsMainApp()
+        {
+            return !installSync.Checked;
+        }
+
+        private void UpdateProviderPanelState()
+        {
+            bool canChooseProvider = InstallsMainApp() && installButton.Enabled;
+            bool canEditCloud = canChooseProvider && providerCloud.Checked;
+
+            providerGroup.Enabled = canChooseProvider;
+            providerOllama.Enabled = canChooseProvider;
+            providerCloud.Enabled = canChooseProvider;
+            cloudUrlLabel.Enabled = canEditCloud;
+            cloudUrlText.Enabled = canEditCloud;
+            cloudModelLabel.Enabled = canEditCloud;
+            cloudModelText.Enabled = canEditCloud;
+            cloudKeyLabel.Enabled = canEditCloud;
+            cloudKeyText.Enabled = canEditCloud;
+            cloudKeyNotice.Enabled = canEditCloud;
+        }
+
+        private void RunInstall(
+            InstallChoice choice,
+            string root,
+            string selectedLanguage,
+            string llmProvider,
+            string cloudApiUrl,
+            string cloudModel,
+            string cloudApiKey)
         {
             Directory.CreateDirectory(root);
 
@@ -363,7 +478,12 @@ namespace GwispSetup
                         "Install-Gwisp-Main.ps1",
                         Path.Combine(root, "Main"),
                         workRoot,
-                        selectedLanguage);
+                        selectedLanguage,
+                        true,
+                        llmProvider,
+                        cloudApiUrl,
+                        cloudModel,
+                        cloudApiKey);
                 }
 
                 if (choice == InstallChoice.Both || choice == InstallChoice.SyncOcr)
@@ -373,7 +493,12 @@ namespace GwispSetup
                         "Install-Gwisp-SyncOCR.ps1",
                         Path.Combine(root, "SyncOCR"),
                         workRoot,
-                        selectedLanguage);
+                        selectedLanguage,
+                        false,
+                        llmProvider,
+                        cloudApiUrl,
+                        cloudModel,
+                        cloudApiKey);
                 }
             }
             finally
@@ -387,7 +512,12 @@ namespace GwispSetup
             string installerScriptName,
             string targetDirectory,
             string workRoot,
-            string selectedLanguage)
+            string selectedLanguage,
+            bool configureProvider,
+            string llmProvider,
+            string cloudApiUrl,
+            string cloudModel,
+            string cloudApiKey)
         {
             Log(Translate("preparing") + " " + zipName + "...");
             string zipPath = ResolvePackage(zipName, workRoot);
@@ -403,7 +533,15 @@ namespace GwispSetup
             }
 
             Log(Translate("installingTo") + " " + targetDirectory + "...");
-            RunPowerShellInstaller(installerScript, targetDirectory, selectedLanguage);
+            RunPowerShellInstaller(
+                installerScript,
+                targetDirectory,
+                selectedLanguage,
+                configureProvider,
+                llmProvider,
+                cloudApiUrl,
+                cloudModel,
+                cloudApiKey);
             Log(Translate("completed") + ": " + targetDirectory);
         }
 
@@ -465,21 +603,54 @@ namespace GwispSetup
             }
         }
 
-        private void RunPowerShellInstaller(string scriptPath, string targetDirectory, string selectedLanguage)
+        private void RunPowerShellInstaller(
+            string scriptPath,
+            string targetDirectory,
+            string selectedLanguage,
+            bool configureProvider,
+            string llmProvider,
+            string cloudApiUrl,
+            string cloudModel,
+            string cloudApiKey)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = GetPowerShellPath();
-            startInfo.Arguments =
-                "-NoProfile -ExecutionPolicy Bypass -File " +
-                Quote(scriptPath) +
-                " -InstallDir " +
-                Quote(targetDirectory) +
-                " -Language " +
-                Quote(selectedLanguage);
+            StringBuilder arguments = new StringBuilder();
+            arguments.Append("-NoProfile -ExecutionPolicy Bypass -File ");
+            arguments.Append(Quote(scriptPath));
+            arguments.Append(" -InstallDir ");
+            arguments.Append(Quote(targetDirectory));
+            arguments.Append(" -Language ");
+            arguments.Append(Quote(selectedLanguage));
+
+            if (configureProvider)
+            {
+                arguments.Append(" -LlmProvider ");
+                arguments.Append(Quote(llmProvider));
+
+                if (!string.IsNullOrEmpty(cloudApiUrl))
+                {
+                    arguments.Append(" -CloudApiUrl ");
+                    arguments.Append(Quote(cloudApiUrl));
+                }
+
+                if (!string.IsNullOrEmpty(cloudModel))
+                {
+                    arguments.Append(" -CloudModel ");
+                    arguments.Append(Quote(cloudModel));
+                }
+
+            }
+
+            startInfo.Arguments = arguments.ToString();
             startInfo.UseShellExecute = false;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
+            if (configureProvider && !string.IsNullOrEmpty(cloudApiKey))
+            {
+                startInfo.EnvironmentVariables["GWISP_SETUP_CLOUD_API_KEY"] = cloudApiKey;
+            }
 
             using (Process process = new Process())
             using (ManualResetEvent outputClosed = new ManualResetEvent(false))
@@ -538,7 +709,7 @@ namespace GwispSetup
 
         private static string Quote(string value)
         {
-            return "\"" + value.Replace("\"", "\\\"") + "\"";
+            return "'" + value.Replace("'", "''") + "'";
         }
 
         private void SetInstallingState(bool installing)
@@ -550,6 +721,7 @@ namespace GwispSetup
             installRoot.Enabled = !installing;
             browseButton.Enabled = !installing;
             installButton.Enabled = !installing;
+            UpdateProviderPanelState();
             progressBar.MarqueeAnimationSpeed = installing ? 30 : 0;
             statusLabel.Text = installing ? Translate("installing") : statusLabel.Text;
         }
@@ -570,7 +742,7 @@ namespace GwispSetup
                     case "language":
                         return "Language";
                     case "notice":
-                        return "Choose the components below. The installer uses local ZIPs beside the EXE or downloads from GitHub Release.";
+                        return "Choose components and AI provider. The EXE uses local ZIPs beside it or downloads from GitHub Release.";
                     case "choiceGroup":
                         return "Install option";
                     case "installBoth":
@@ -579,6 +751,20 @@ namespace GwispSetup
                         return "Only the full main app";
                     case "installSync":
                         return "Only Sync OCR";
+                    case "providerGroup":
+                        return "AI provider for Gwisp Main";
+                    case "providerOllama":
+                        return "Local Ollama (default; keeps AI requests local)";
+                    case "providerCloud":
+                        return "Cloud API (Chat Completions compatible)";
+                    case "cloudUrl":
+                        return "API URL";
+                    case "cloudModel":
+                        return "Model";
+                    case "cloudKey":
+                        return "API key";
+                    case "cloudKeyNotice":
+                        return "Saved only in local config.json. Leave blank to use GWISP_CLOUD_API_KEY.";
                     case "destination":
                         return "Destination";
                     case "progress":
@@ -590,6 +776,10 @@ namespace GwispSetup
                     case "chooseFolderDescription":
                     case "chooseFolder":
                         return "Choose an install folder.";
+                    case "invalidCloudUrl":
+                        return "Enter a valid Cloud API URL.";
+                    case "missingCloudModel":
+                        return "Enter a Cloud API model name.";
                     case "installing":
                         return "Installing...";
                     case "doneStatus":
@@ -631,7 +821,7 @@ namespace GwispSetup
                     case "language":
                         return "Sprache";
                     case "notice":
-                        return "Komponenten waehlen. Der Installer nutzt lokale ZIPs neben der EXE oder GitHub Release.";
+                        return "Komponenten und KI-Anbieter waehlen. Die EXE nutzt lokale ZIPs oder GitHub Release.";
                     case "choiceGroup":
                         return "Installationsoption";
                     case "installBoth":
@@ -640,6 +830,20 @@ namespace GwispSetup
                         return "Nur komplette Haupt-App";
                     case "installSync":
                         return "Nur Sync OCR";
+                    case "providerGroup":
+                        return "KI-Anbieter fuer Gwisp Main";
+                    case "providerOllama":
+                        return "Lokales Ollama (Standard; KI-Anfragen bleiben lokal)";
+                    case "providerCloud":
+                        return "Cloud API (kompatibel mit Chat Completions)";
+                    case "cloudUrl":
+                        return "API-URL";
+                    case "cloudModel":
+                        return "Modell";
+                    case "cloudKey":
+                        return "API-Key";
+                    case "cloudKeyNotice":
+                        return "Nur in lokaler config.json gespeichert. Leer lassen fuer GWISP_CLOUD_API_KEY.";
                     case "destination":
                         return "Zielordner";
                     case "progress":
@@ -651,6 +855,10 @@ namespace GwispSetup
                     case "chooseFolderDescription":
                     case "chooseFolder":
                         return "Installationsordner waehlen.";
+                    case "invalidCloudUrl":
+                        return "Geben Sie eine gueltige Cloud-API-URL ein.";
+                    case "missingCloudModel":
+                        return "Geben Sie einen Cloud-API-Modellnamen ein.";
                     case "installing":
                         return "Installiere...";
                     case "doneStatus":
@@ -690,7 +898,7 @@ namespace GwispSetup
                 case "language":
                     return "Idioma";
                 case "notice":
-                    return "Escolha os componentes abaixo. O instalador usa ZIPs locais ao lado do EXE ou baixa da GitHub Release.";
+                    return "Escolha componentes e provedor de IA. O EXE usa ZIPs locais ao lado dele ou baixa da GitHub Release.";
                 case "choiceGroup":
                     return "Opcao de instalacao";
                 case "installBoth":
@@ -699,6 +907,20 @@ namespace GwispSetup
                     return "Somente app principal completo";
                 case "installSync":
                     return "Somente Sync OCR";
+                case "providerGroup":
+                    return "Provedor de IA do Gwisp Main";
+                case "providerOllama":
+                    return "Ollama local (padrao; requisicoes de IA ficam locais)";
+                case "providerCloud":
+                    return "Cloud API (compativel com Chat Completions)";
+                case "cloudUrl":
+                    return "API URL";
+                case "cloudModel":
+                    return "Modelo";
+                case "cloudKey":
+                    return "API key";
+                case "cloudKeyNotice":
+                    return "Salva so no config.json local. Vazio usa GWISP_CLOUD_API_KEY.";
                 case "destination":
                     return "Destino";
                 case "progress":
@@ -710,6 +932,10 @@ namespace GwispSetup
                 case "chooseFolderDescription":
                 case "chooseFolder":
                     return "Escolha uma pasta de instalacao.";
+                case "invalidCloudUrl":
+                    return "Informe uma URL valida para a Cloud API.";
+                case "missingCloudModel":
+                    return "Informe o nome do modelo da Cloud API.";
                 case "installing":
                     return "Instalando...";
                 case "doneStatus":
@@ -825,6 +1051,32 @@ namespace GwispSetup
             button.FlatStyle = FlatStyle.Standard;
             button.UseVisualStyleBackColor = false;
             return button;
+        }
+
+        private static Label CreatePlainLabel(string text, int left, int top, int width, int height)
+        {
+            Label label = new Label();
+            label.Text = text;
+            label.Left = left;
+            label.Top = top;
+            label.Width = width;
+            label.Height = height;
+            label.BackColor = XpControl;
+            label.ForeColor = XpText;
+            return label;
+        }
+
+        private static TextBox CreateTextBox(int left, int top, int width)
+        {
+            TextBox textBox = new TextBox();
+            textBox.Left = left;
+            textBox.Top = top;
+            textBox.Width = width;
+            textBox.Height = 22;
+            textBox.BorderStyle = BorderStyle.Fixed3D;
+            textBox.BackColor = XpWindow;
+            textBox.ForeColor = XpText;
+            return textBox;
         }
 
         private static Label CreateInfoLabel(string text)

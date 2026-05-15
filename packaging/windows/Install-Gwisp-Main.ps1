@@ -2,6 +2,11 @@ param(
     [string]$InstallDir = "$env:LOCALAPPDATA\Gwisp\Main",
     [ValidateSet("en", "pt", "de")]
     [string]$Language = "en",
+    [ValidateSet("ollama", "cloud")]
+    [string]$LlmProvider = "ollama",
+    [string]$CloudApiUrl = "",
+    [string]$CloudModel = "",
+    [string]$CloudApiKey = "",
     [switch]$CreateShortcuts,
     [switch]$NoShortcuts
 )
@@ -70,18 +75,36 @@ function New-AppShortcut {
     }
 }
 
-function Set-GwispConfigLanguage {
+function Set-GwispConfig {
     param(
         [string]$ConfigPath,
-        [string]$Language
+        [string]$Language,
+        [string]$LlmProvider,
+        [string]$CloudApiUrl,
+        [string]$CloudModel,
+        [string]$CloudApiKey
     )
 
     try {
         $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
         $config | Add-Member -NotePropertyName "language" -NotePropertyValue $Language -Force
+        $config | Add-Member -NotePropertyName "llm_provider" -NotePropertyValue $LlmProvider -Force
+
+        if ($LlmProvider -eq "cloud") {
+            if ($CloudApiUrl.Trim().Length -gt 0) {
+                $config | Add-Member -NotePropertyName "cloud_api_url" -NotePropertyValue $CloudApiUrl.Trim() -Force
+            }
+            if ($CloudModel.Trim().Length -gt 0) {
+                $config | Add-Member -NotePropertyName "cloud_model" -NotePropertyValue $CloudModel.Trim() -Force
+            }
+            if ($CloudApiKey.Trim().Length -gt 0) {
+                $config | Add-Member -NotePropertyName "cloud_api_key" -NotePropertyValue $CloudApiKey.Trim() -Force
+            }
+        }
+
         $config | ConvertTo-Json -Depth 8 | Set-Content -Path $ConfigPath -Encoding UTF8
     } catch {
-        throw "Could not set Gwisp language in config.json: $($_.Exception.Message)"
+        throw "Could not set Gwisp config.json values: $($_.Exception.Message)"
     }
 }
 
@@ -107,7 +130,18 @@ $ConfigPath = Join-Path $InstallDir "config.json"
 if (-not (Test-Path -LiteralPath $ConfigPath)) {
     Copy-Item -LiteralPath (Join-Path $InstallDir "config.example.json") -Destination $ConfigPath
 }
-Set-GwispConfigLanguage -ConfigPath $ConfigPath -Language $Language
+$EffectiveCloudApiKey = $CloudApiKey
+if ($EffectiveCloudApiKey.Trim().Length -eq 0 -and $env:GWISP_SETUP_CLOUD_API_KEY) {
+    $EffectiveCloudApiKey = $env:GWISP_SETUP_CLOUD_API_KEY
+}
+
+Set-GwispConfig `
+    -ConfigPath $ConfigPath `
+    -Language $Language `
+    -LlmProvider $LlmProvider `
+    -CloudApiUrl $CloudApiUrl `
+    -CloudModel $CloudModel `
+    -CloudApiKey $EffectiveCloudApiKey
 
 $LauncherPath = Join-Path $InstallDir "Run-Gwisp-Main.bat"
 @"
@@ -143,5 +177,15 @@ Write-Host "Gwisp Main installed successfully."
 Write-Host "Install folder: $InstallDir"
 Write-Host "Launcher: $LauncherPath"
 Write-Host ""
-Write-Host "Before first use, install/configure Tesseract OCR and choose Local Ollama or Cloud API."
+if ($LlmProvider -eq "cloud") {
+    Write-Host "AI provider: Cloud API."
+    if ($EffectiveCloudApiKey.Trim().Length -gt 0) {
+        Write-Host "Cloud API key saved only in the local config.json file."
+    } else {
+        Write-Host "Set GWISP_CLOUD_API_KEY before running Gwisp if your provider requires a key."
+    }
+} else {
+    Write-Host "AI provider: Local Ollama. Install Ollama and pull the configured model before first use."
+}
+Write-Host "Before first use, install/configure Tesseract OCR."
 

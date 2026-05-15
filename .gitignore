@@ -18,8 +18,6 @@ venv/
 *.crt
 artifacts/
 logs/
-docs/handoff/
-docs/learning/
 config.json
 build/
 dist/

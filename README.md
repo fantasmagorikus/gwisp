@@ -53,25 +53,30 @@
 
 | App | Download | What it installs |
 | --- | --- | --- |
-| Gwisp Setup EXE | [Download Windows setup EXE](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Setup.exe) | Alpha build 1.0.3 installer window with Main, Sync OCR, or both |
+| Gwisp Setup EXE | [Download Windows setup EXE](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Setup.exe) | Alpha build 1.0.3 guided installer with language, Main/Sync OCR/both, and AI provider selection |
 | Gwisp Main | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Main-Windows.zip) | Alpha build 1.0.3 main OCR + selectable AI provider desktop app |
 | Gwisp Sync OCR | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-SyncOCR-Windows.zip) | Alpha build 1.0.3 secondary-machine capture companion |
 
 > Run `Gwisp-Setup.exe` for the guided installer. The ZIP downloads
 > are still available as manual fallback packages. The installer and both
 > desktop apps include language selection for 🏴 English, 🇧🇷 Portuguese,
-> and 🇩🇪 German. Alpha build 1.0.3 is currently tested on Windows 11 only.
+> and 🇩🇪 German. The installer can configure Gwisp Main for local Ollama or
+> a cloud Chat Completions compatible API. Alpha build 1.0.3 is currently
+> tested on Windows 11 only.
 >
 > Execute `Gwisp-Setup.exe` para abrir o instalador guiado. Os ZIPs
 > continuam disponiveis como fallback manual. O instalador e os dois apps
 > incluem selecao de idioma para 🏴 ingles, 🇧🇷 portugues e 🇩🇪 alemao.
-> A versao alpha build 1.0.3 foi testada por enquanto apenas no Windows 11.
+> O instalador pode configurar o Gwisp Main para Ollama local ou uma API cloud
+> compativel com Chat Completions. A versao alpha build 1.0.3 foi testada por
+> enquanto apenas no Windows 11.
 >
 > Fuehren Sie `Gwisp-Setup.exe` aus, um den gefuehrten Installer zu oeffnen.
 > Die ZIP-Downloads bleiben als manuelle Installationsoption verfuegbar.
 > Installer und beide Desktop-Apps enthalten eine Sprachauswahl fuer
-> 🏴 Englisch, 🇧🇷 Portugiesisch und 🇩🇪 Deutsch. Alpha build 1.0.3 ist
-> aktuell nur unter Windows 11 getestet.
+> 🏴 Englisch, 🇧🇷 Portugiesisch und 🇩🇪 Deutsch. Der Installer kann Gwisp Main
+> fuer lokales Ollama oder eine mit Chat Completions kompatible Cloud-API
+> konfigurieren. Alpha build 1.0.3 ist aktuell nur unter Windows 11 getestet.
 
 ## Windows 11 Status
 
@@ -88,7 +93,8 @@
 
 ## AI Provider Options
 
-Gwisp is modular at the LLM layer. Set `llm_provider` in local `config.json`:
+Gwisp is modular at the LLM layer. The EXE installer can configure the main app
+for you. For manual installs, set `llm_provider` in local `config.json`:
 
 - `ollama`: default local provider. Uses `ollama_url`, `ollama_model`, and the
   Ollama runtime installed on the main machine.
@@ -101,6 +107,13 @@ providers can be used by changing `cloud_api_url` and `cloud_model`.
 
 Do not commit real API keys. Keep secrets in environment variables or local
 ignored config only.
+
+Manual cloud install example:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -LlmProvider cloud -CloudApiUrl https://api.openai.com/v1/chat/completions -CloudModel gpt-4.1-mini
+# Then set GWISP_CLOUD_API_KEY, or pass -CloudApiKey during a local install if you accept saving it in config.json.
+```
 
 ## Support The Project
 
@@ -155,6 +168,7 @@ Recommended EXE installer:
 # - Both: full main app + Sync OCR
 # - Only the full main app
 # - Only Sync OCR
+# - AI provider for Gwisp Main: Local Ollama or Cloud API
 ```
 
 Manual ZIP install for the main machine:
@@ -182,10 +196,10 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -
 ### Main App Workflow
 
 1. Install Python 3.11+ and Tesseract OCR on the main machine.
-2. Choose an AI provider:
+2. Choose an AI provider in the EXE installer or local config:
    - Local: install Ollama and download the configured model.
-   - Cloud: set `llm_provider` to `cloud`, configure `cloud_api_url` and
-     `cloud_model`, then set `GWISP_CLOUD_API_KEY`.
+   - Cloud: configure `cloud_api_url` and `cloud_model`, then set
+     `GWISP_CLOUD_API_KEY` or enter the key during local installation.
 3. Install **Gwisp Main**.
 4. Open the launcher shown by the installer.
 5. Click `Check setup`.
@@ -265,6 +279,7 @@ Instalador EXE recomendado:
 # - Os dois
 # - Somente app principal completo
 # - Somente Sync OCR
+# - Provedor de IA do Gwisp Main: Ollama local ou Cloud API
 ```
 
 Instalacao manual por ZIP para a maquina principal:
@@ -292,10 +307,10 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language pt -
 ### Uso Do App Principal
 
 1. Instale Python 3.11+ e Tesseract OCR na maquina principal.
-2. Escolha o provedor de IA:
+2. Escolha o provedor de IA no instalador EXE ou na config local:
    - Local: instale Ollama e baixe o modelo configurado.
-   - Cloud: defina `llm_provider` como `cloud`, configure `cloud_api_url` e
-     `cloud_model`, depois defina `GWISP_CLOUD_API_KEY`.
+   - Cloud: configure `cloud_api_url` e `cloud_model`, depois defina
+     `GWISP_CLOUD_API_KEY` ou informe a chave durante a instalacao local.
 3. Instale o **Gwisp Main**.
 4. Abra o launcher mostrado pelo instalador.
 5. Clique em `Check setup`.
@@ -360,6 +375,7 @@ Empfohlener EXE-Installer:
 # - Beides: komplette Haupt-App + Sync OCR
 # - Nur komplette Haupt-App
 # - Nur Sync OCR
+# - KI-Anbieter fuer Gwisp Main: lokales Ollama oder Cloud API
 ```
 
 Manuelle ZIP-Installation fuer den Hauptrechner:
@@ -387,10 +403,10 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language de -
 ### Ablauf In Der Haupt-App
 
 1. Python 3.11+ und Tesseract OCR auf dem Hauptrechner installieren.
-2. KI-Anbieter waehlen:
+2. KI-Anbieter im EXE-Installer oder in der lokalen Config waehlen:
    - Lokal: Ollama installieren und das konfigurierte Modell herunterladen.
-   - Cloud: `llm_provider` auf `cloud` setzen, `cloud_api_url` und
-     `cloud_model` konfigurieren, dann `GWISP_CLOUD_API_KEY` setzen.
+   - Cloud: `cloud_api_url` und `cloud_model` konfigurieren, dann
+     `GWISP_CLOUD_API_KEY` setzen oder den Key bei lokaler Installation eingeben.
 3. **Gwisp Main** installieren.
 4. Den Launcher aus dem Installationsordner oeffnen.
 5. `Check setup` anklicken.
