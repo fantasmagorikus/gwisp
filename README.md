@@ -5,19 +5,22 @@
 **Copyright (c) 2026 Raphael (@fantasmagorikus). All rights reserved.**
 
 > **EN:** A Windows desktop OCR assistant that captures questions from the screen,
-> reads them with Tesseract, and sends the cleaned text to a local Ollama model.
-> It also includes **Sync OCR**, a companion app for capturing a second machine
-> over your trusted local network.
+> reads them with Tesseract, and sends the cleaned text to the AI provider you
+> choose: local Ollama or a cloud-hosted Chat Completions compatible API. It also
+> includes **Sync OCR**, a companion app for capturing a second machine over your
+> trusted local network.
 >
 > **PT-BR:** Um assistente desktop para Windows que captura perguntas da tela,
-> le com Tesseract e envia o texto limpo para um modelo local no Ollama. Tambem
+> le com Tesseract e envia o texto limpo para o provedor de IA que voce escolher:
+> Ollama local ou uma API cloud-hosted compativel com Chat Completions. Tambem
 > inclui o **Sync OCR**, um app companheiro para capturar uma segunda maquina na
 > sua rede local confiavel.
 >
 > **DE:** Ein Windows-Desktop-OCR-Assistent, der Fragen vom Bildschirm erfasst,
-> sie mit Tesseract liest und den bereinigten Text an ein lokales Ollama-Modell
-> sendet. Enthalten ist auch **Sync OCR**, eine Begleit-App zur Erfassung eines
-> zweiten Rechners im vertrauenswuerdigen lokalen Netzwerk.
+> sie mit Tesseract liest und den bereinigten Text an den ausgewaehlten
+> KI-Anbieter sendet: lokales Ollama oder eine cloud-hosted API, die mit Chat
+> Completions kompatibel ist. Enthalten ist auch **Sync OCR**, eine Begleit-App
+> zur Erfassung eines zweiten Rechners im vertrauenswuerdigen lokalen Netzwerk.
 
 > **Responsible-use warning:** The developer of this project does not recommend
 > using Gwisp in evaluated certifications, real exams, paid graded activities, or
@@ -51,7 +54,7 @@
 | App | Download | What it installs |
 | --- | --- | --- |
 | Gwisp Setup EXE | [Download Windows setup EXE](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Setup.exe) | Alpha build 1.0.3 installer window with Main, Sync OCR, or both |
-| Gwisp Main | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Main-Windows.zip) | Alpha build 1.0.3 main OCR + Ollama desktop app |
+| Gwisp Main | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-Main-Windows.zip) | Alpha build 1.0.3 main OCR + selectable AI provider desktop app |
 | Gwisp Sync OCR | [Download Windows installer ZIP](https://github.com/fantasmagorikus/gwisp/releases/latest/download/Gwisp-SyncOCR-Windows.zip) | Alpha build 1.0.3 secondary-machine capture companion |
 
 > Run `Gwisp-Setup.exe` for the guided installer. The ZIP downloads
@@ -82,6 +85,22 @@
 - The EXE is not code-signed yet. Windows SmartScreen or "unknown publisher"
   prompts can still appear for public downloads until the project is signed with
   a trusted code-signing certificate.
+
+## AI Provider Options
+
+Gwisp is modular at the LLM layer. Set `llm_provider` in local `config.json`:
+
+- `ollama`: default local provider. Uses `ollama_url`, `ollama_model`, and the
+  Ollama runtime installed on the main machine.
+- `cloud`: cloud-hosted API provider. Uses `cloud_api_url`, `cloud_model`, and a
+  bearer API key from `GWISP_CLOUD_API_KEY` or local `config.json`.
+
+The default cloud endpoint is `https://api.openai.com/v1/chat/completions`,
+which follows the Chat Completions request/response shape. Other compatible
+providers can be used by changing `cloud_api_url` and `cloud_model`.
+
+Do not commit real API keys. Keep secrets in environment variables or local
+ignored config only.
 
 ## Support The Project
 
@@ -114,8 +133,8 @@ unterstuetzen. Bitte pruefe die Adresse vor dem Senden.
 
 Gwisp is built for controlled practice, training labs, support
 workflows, and local study environments where you need fast OCR over a screen
-region and a local AI answer. The main app stays on your machine; OCR text goes
-to your configured local Ollama endpoint.
+region and an AI answer. The main app stays on your machine; OCR text is sent
+only to the selected provider: local Ollama or the configured cloud API.
 
 ### Use Cases
 
@@ -123,7 +142,8 @@ to your configured local Ollama endpoint.
 - Internal support or QA simulations where operators need quick answer drafts.
 - Remote browser or VM windows captured through `OCR box` or `Select capture window`.
 - Two-machine setups where the source screen must stay fullscreen on another PC.
-- Offline/local AI workflows that should avoid paid API keys.
+- Offline/local AI workflows with Ollama or cloud API workflows when a hosted
+  model is preferred.
 
 ### Quick Install
 
@@ -161,16 +181,20 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -
 
 ### Main App Workflow
 
-1. Install Python 3.11+, Tesseract OCR, and Ollama on the main machine.
-2. Install **Gwisp Main**.
-3. Open the launcher shown by the installer.
-4. Click `Check setup`.
-5. Click `Load model`.
-6. Choose one capture mode:
+1. Install Python 3.11+ and Tesseract OCR on the main machine.
+2. Choose an AI provider:
+   - Local: install Ollama and download the configured model.
+   - Cloud: set `llm_provider` to `cloud`, configure `cloud_api_url` and
+     `cloud_model`, then set `GWISP_CLOUD_API_KEY`.
+3. Install **Gwisp Main**.
+4. Open the launcher shown by the installer.
+5. Click `Check setup`.
+6. Click `Load model`.
+7. Choose one capture mode:
    - `OCR box`: drag a small box over the question.
    - `Select capture window`: capture a selected Windows window.
    - `Sync OCR`: connect to the companion app running on another machine.
-7. Click `Start` or use the automatic start from `Sync OCR`.
+8. Click `Start` or use the automatic start from `Sync OCR`.
 
 ### Sync OCR Workflow
 
@@ -209,7 +233,7 @@ Reason:
 - Windows 11. This alpha build is currently tested only on Windows 11.
 - Python 3.11 or newer.
 - Tesseract OCR on the main machine.
-- Ollama on the main machine.
+- Either Ollama on the main machine or a cloud API key for a compatible provider.
 - Both machines on the same trusted local network for Sync OCR.
 
 ## Portugues
@@ -218,8 +242,9 @@ Reason:
 
 Gwisp foi feito para ambientes controlados de pratica, laboratorios,
 treinamento e suporte, onde voce precisa capturar rapidamente uma pergunta da
-tela via OCR e gerar uma resposta com IA local. O app principal fica na sua
-maquina; o texto OCR vai para o Ollama configurado localmente.
+tela via OCR e gerar uma resposta com IA. O app principal fica na sua maquina;
+o texto OCR vai apenas para o provedor selecionado: Ollama local ou a API cloud
+configurada.
 
 ### Casos De Uso
 
@@ -227,7 +252,8 @@ maquina; o texto OCR vai para o Ollama configurado localmente.
 - Simulacoes internas de suporte ou QA.
 - Janelas remotas, navegadores ou VMs capturados por `OCR box` ou `Select capture window`.
 - Setup com duas maquinas, quando a tela fonte precisa ficar fullscreen em outro PC.
-- Fluxos locais/offline que nao devem depender de chave paga de API.
+- Fluxos locais/offline com Ollama ou fluxos com API cloud quando voce preferir
+  um modelo hospedado.
 
 ### Instalacao Rapida
 
@@ -265,16 +291,20 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language pt -
 
 ### Uso Do App Principal
 
-1. Instale Python 3.11+, Tesseract OCR e Ollama na maquina principal.
-2. Instale o **Gwisp Main**.
-3. Abra o launcher mostrado pelo instalador.
-4. Clique em `Check setup`.
-5. Clique em `Load model`.
-6. Escolha uma fonte de captura:
+1. Instale Python 3.11+ e Tesseract OCR na maquina principal.
+2. Escolha o provedor de IA:
+   - Local: instale Ollama e baixe o modelo configurado.
+   - Cloud: defina `llm_provider` como `cloud`, configure `cloud_api_url` e
+     `cloud_model`, depois defina `GWISP_CLOUD_API_KEY`.
+3. Instale o **Gwisp Main**.
+4. Abra o launcher mostrado pelo instalador.
+5. Clique em `Check setup`.
+6. Clique em `Load model`.
+7. Escolha uma fonte de captura:
    - `OCR box`: caixa pequena arrastavel sobre a pergunta.
    - `Select capture window`: captura uma janela selecionada do Windows.
    - `Sync OCR`: conecta no app companheiro rodando em outra maquina.
-7. Clique em `Start` ou deixe o `Sync OCR` iniciar automaticamente.
+8. Clique em `Start` ou deixe o `Sync OCR` iniciar automaticamente.
 
 ### Uso Do Sync OCR
 
@@ -295,7 +325,7 @@ Please fill this on the first machine. Waiting for connection...
 - Windows 11. Esta build alpha foi testada por enquanto apenas no Windows 11.
 - Python 3.11 ou mais recente.
 - Tesseract OCR na maquina principal.
-- Ollama na maquina principal.
+- Ollama na maquina principal ou uma chave de API cloud para um provedor compativel.
 - As duas maquinas na mesma rede local confiavel para usar Sync OCR.
 
 ## Deutsch
@@ -304,9 +334,9 @@ Please fill this on the first machine. Waiting for connection...
 
 Gwisp ist fuer kontrollierte Uebungen, Trainingslabore, Support-Workflows und
 lokale Lernumgebungen gebaut, in denen eine Frage schnell per OCR vom
-Bildschirm erfasst und mit lokaler KI beantwortet werden soll. Die Haupt-App
-bleibt auf dem eigenen Rechner; der OCR-Text geht an den lokal konfigurierten
-Ollama-Endpunkt.
+Bildschirm erfasst und mit KI beantwortet werden soll. Die Haupt-App bleibt auf
+dem eigenen Rechner; der OCR-Text geht nur an den ausgewaehlten Anbieter:
+lokales Ollama oder die konfigurierte Cloud-API.
 
 ### Anwendungsfaelle
 
@@ -317,7 +347,8 @@ Ollama-Endpunkt.
   `Select capture window`.
 - Zwei-Rechner-Setups, wenn der Quellbildschirm auf einem anderen PC im
   Vollbild bleiben muss.
-- Lokale/offline KI-Workflows ohne bezahlte API-Schluessel.
+- Lokale/offline KI-Workflows mit Ollama oder Cloud-API-Workflows, wenn ein
+  gehostetes Modell bevorzugt wird.
 
 ### Schnellinstallation
 
@@ -355,16 +386,20 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language de -
 
 ### Ablauf In Der Haupt-App
 
-1. Python 3.11+, Tesseract OCR und Ollama auf dem Hauptrechner installieren.
-2. **Gwisp Main** installieren.
-3. Den Launcher aus dem Installationsordner oeffnen.
-4. `Check setup` anklicken.
-5. `Load model` anklicken.
-6. Eine Capture-Quelle waehlen:
+1. Python 3.11+ und Tesseract OCR auf dem Hauptrechner installieren.
+2. KI-Anbieter waehlen:
+   - Lokal: Ollama installieren und das konfigurierte Modell herunterladen.
+   - Cloud: `llm_provider` auf `cloud` setzen, `cloud_api_url` und
+     `cloud_model` konfigurieren, dann `GWISP_CLOUD_API_KEY` setzen.
+3. **Gwisp Main** installieren.
+4. Den Launcher aus dem Installationsordner oeffnen.
+5. `Check setup` anklicken.
+6. `Load model` anklicken.
+7. Eine Capture-Quelle waehlen:
    - `OCR box`: kleines verschiebbares Feld ueber der Frage.
    - `Select capture window`: ein ausgewaehltes Windows-Fenster erfassen.
    - `Sync OCR`: mit der Begleit-App auf einem anderen Rechner verbinden.
-7. `Start` anklicken oder den automatischen Start von `Sync OCR` nutzen.
+8. `Start` anklicken oder den automatischen Start von `Sync OCR` nutzen.
 
 ### Sync-OCR-Nutzung
 
@@ -379,7 +414,8 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language de -
 - Windows 11. Diese Alpha-Build ist aktuell nur unter Windows 11 getestet.
 - Python 3.11 oder neuer.
 - Tesseract OCR auf dem Hauptrechner.
-- Ollama auf dem Hauptrechner.
+- Ollama auf dem Hauptrechner oder ein Cloud-API-Schluessel fuer einen
+  kompatiblen Anbieter.
 - Beide Rechner im selben vertrauenswuerdigen lokalen Netzwerk fuer Sync OCR.
 
 ## Developer Setup
@@ -407,7 +443,7 @@ powershell -ExecutionPolicy Bypass -File .\packaging\windows\Build-WindowsInstal
 
 - `src/gwisp/`: Python package source.
 - `src/gwisp/ui/`: Qt/PySide6 windows.
-- `src/gwisp/adapters/`: screen, window, Sync OCR, Tesseract, Ollama, and log adapters.
+- `src/gwisp/adapters/`: screen, window, Sync OCR, Tesseract, Ollama, cloud API, and log adapters.
 - `src/gwisp/services/`: OCR cleanup, prompts, duplicate detection, and QA pipeline.
 - `src/gwisp/assets/`: packaged app icon.
 - `downloads/`: versioned installer ZIPs linked from this README.
@@ -417,13 +453,16 @@ powershell -ExecutionPolicy Bypass -File .\packaging\windows\Build-WindowsInstal
 
 ## Privacy And Security
 
-- The main app sends OCR text only to the configured Ollama endpoint by default.
+- The main app sends OCR text only to the selected AI provider.
+- With `llm_provider=ollama`, OCR text goes to the configured Ollama endpoint.
+- With `llm_provider=cloud`, OCR text goes to the configured cloud API endpoint.
 - Screenshots are not saved by the app; preview images stay in memory/UI.
 - Sync OCR transfers screenshots over your trusted local network only after token pairing.
 - Sync OCR uses local HTTP with a high-entropy bearer token; do not use it on
   untrusted Wi-Fi or networks where traffic may be inspected.
-- Do not configure `ollama_url` to a remote service unless you are comfortable
-  sending captured OCR text to that service.
+- Do not configure a remote `ollama_url` or cloud `cloud_api_url` unless you are
+  comfortable sending captured OCR text to that service.
+- Prefer `GWISP_CLOUD_API_KEY` for cloud credentials and never commit real API keys.
 - Use Sync OCR only on trusted networks.
 - Logs and local configs are ignored by Git because they may contain private data.
 

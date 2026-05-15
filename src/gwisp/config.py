@@ -31,6 +31,8 @@ CONFIG_PATH = APP_DIR / "config.json"
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "language": "en",
+    "llm_provider": "ollama",
+    "llm_auto_warmup": True,
     "region": {"left": 200, "top": 150, "width": 1100, "height": 650},
     "interval_seconds": 1.5,
     "min_chars": 15,
@@ -44,10 +46,15 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "ollama_num_ctx": 2048,
     "ollama_num_predict": 100,
     "ollama_temperature": 0.1,
-    "ollama_auto_warmup": True,
     "ollama_keep_alive": "30m",
     "ollama_connect_timeout_seconds": 10,
     "ollama_request_timeout_seconds": 240,
+    "cloud_api_url": "https://api.openai.com/v1/chat/completions",
+    "cloud_model": "gpt-4.1-mini",
+    "cloud_max_tokens": 150,
+    "cloud_temperature": 0.1,
+    "cloud_connect_timeout_seconds": 10,
+    "cloud_request_timeout_seconds": 120,
     "always_on_top": True,
     "output_log_file": "gwisp_log.txt",
     "event_log_file": "logs/gwisp_events.log",
@@ -79,6 +86,8 @@ class AppSettings(BaseSettings):
     )
 
     language: str = "en"
+    llm_provider: str = "ollama"
+    llm_auto_warmup: bool = True
     region: RegionSettings = Field(default_factory=RegionSettings)
     interval_seconds: float = Field(default=1.5, gt=0)
     min_chars: int = Field(default=15, ge=0)
@@ -92,10 +101,16 @@ class AppSettings(BaseSettings):
     ollama_num_ctx: int = Field(default=2048, gt=0)
     ollama_num_predict: int = Field(default=100, gt=0)
     ollama_temperature: float = Field(default=0.1, ge=0)
-    ollama_auto_warmup: bool = True
     ollama_keep_alive: str = "30m"
     ollama_connect_timeout_seconds: float = Field(default=10, gt=0)
     ollama_request_timeout_seconds: float = Field(default=240, gt=0)
+    cloud_api_url: str = "https://api.openai.com/v1/chat/completions"
+    cloud_api_key: str = ""
+    cloud_model: str = "gpt-4.1-mini"
+    cloud_max_tokens: int = Field(default=150, ge=0)
+    cloud_temperature: float = Field(default=0.1, ge=0)
+    cloud_connect_timeout_seconds: float = Field(default=10, gt=0)
+    cloud_request_timeout_seconds: float = Field(default=120, gt=0)
     always_on_top: bool = True
     output_log_file: str = "gwisp_log.txt"
     event_log_file: str = "logs/gwisp_events.log"

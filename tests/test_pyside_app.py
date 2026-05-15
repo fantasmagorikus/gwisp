@@ -35,6 +35,10 @@ def test_main_toolbar_has_sync_ocr_button() -> None:
         text_key == "button.support" and command == "show_support"
         for text_key, command, _ in MAIN_BUTTONS
     )
+    assert any(
+        text_key == "button.test_ai_provider" and command == "test_ai_provider"
+        for text_key, command, _ in MAIN_BUTTONS
+    )
 
 
 def test_capture_box_does_not_take_focus_when_shown() -> None:
@@ -68,15 +72,21 @@ def test_final_answers_are_stacked_with_checkmarks(monkeypatch, tmp_path) -> Non
     class FakeWindowCapture:
         pass
 
-    class FakeOllamaClient:
-        def __init__(self, _settings):
-            pass
+    class FakeLlmClient:
+        display_name = "Local Ollama"
+        model_name = "fake-local-model"
+
+        def warm_up(self):
+            return "ready"
+
+        def ask(self, _question):
+            return "Answer: B"
 
     monkeypatch.setattr(pyside_app, "load_settings", lambda: settings)
     monkeypatch.setattr(pyside_app, "TesseractOcr", FakeTesseractOcr)
     monkeypatch.setattr(pyside_app, "MssScreenCapture", FakeScreenCapture)
     monkeypatch.setattr(pyside_app, "WindowCapture", FakeWindowCapture)
-    monkeypatch.setattr(pyside_app, "OllamaClient", FakeOllamaClient)
+    monkeypatch.setattr(pyside_app, "create_llm_client", lambda _settings: FakeLlmClient())
 
     window = GwispWindow()
     captured_at = dt.datetime(2026, 4, 27, 9, 30, 0)
@@ -86,6 +96,8 @@ def test_final_answers_are_stacked_with_checkmarks(monkeypatch, tmp_path) -> Non
         assert "Alpha build 1.0.3" in window.windowTitle()
         assert window.language_combo.currentData() == "en"
         assert window.toolbar_buttons["button.sync_ocr"].text() == "Sync OCR"
+        assert window.toolbar_buttons["button.test_ai_provider"].text() == "Test AI"
+        assert window.provider_label.text() == "AI provider: Local Ollama (fake-local-model)"
         signature_labels = [label.text() for label in window.status_bar.findChildren(QLabel)]
         assert any("> developed by @fantasmagorikus" in text for text in signature_labels)
         window.handle_ui_event(
@@ -145,9 +157,15 @@ def test_capture_ocr_image_prefers_remote_sync_capture(monkeypatch, tmp_path) ->
     class FakeWindowCapture:
         pass
 
-    class FakeOllamaClient:
-        def __init__(self, _settings):
-            pass
+    class FakeLlmClient:
+        display_name = "Cloud API"
+        model_name = "cloud-model"
+
+        def warm_up(self):
+            return "ready"
+
+        def ask(self, _question):
+            return "Answer: B"
 
     class FakeRemoteSyncCapture:
         connection_info = None
@@ -159,7 +177,7 @@ def test_capture_ocr_image_prefers_remote_sync_capture(monkeypatch, tmp_path) ->
     monkeypatch.setattr(pyside_app, "TesseractOcr", FakeTesseractOcr)
     monkeypatch.setattr(pyside_app, "MssScreenCapture", FakeScreenCapture)
     monkeypatch.setattr(pyside_app, "WindowCapture", FakeWindowCapture)
-    monkeypatch.setattr(pyside_app, "OllamaClient", FakeOllamaClient)
+    monkeypatch.setattr(pyside_app, "create_llm_client", lambda _settings: FakeLlmClient())
 
     window = GwispWindow()
     try:

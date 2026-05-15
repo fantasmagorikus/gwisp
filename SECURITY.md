@@ -38,8 +38,12 @@ bezahlten Aktivitaeten. Nutzung auf eigene Verantwortung.
 - Sync OCR is intended only for trusted local networks.
 - Sync OCR sends screenshots over local HTTP protected by a random bearer token.
   Do not use it on untrusted networks.
-- The main app sends OCR text to the configured Ollama endpoint. Keep
-  `ollama_url` local unless you intend to send captured text elsewhere.
+- The main app sends OCR text to the selected AI provider. With `llm_provider`
+  set to `ollama`, text stays on the configured Ollama endpoint. With
+  `llm_provider` set to `cloud`, captured text is sent to the configured
+  cloud API endpoint.
+- Prefer `GWISP_CLOUD_API_KEY` for cloud credentials. If you add
+  `cloud_api_key` to local `config.json`, keep that file out of Git.
 
 ## Reporting
 

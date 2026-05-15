@@ -7,8 +7,15 @@ from gwisp.services.prompts import SYSTEM_PROMPT
 
 
 class OllamaClient:
+    provider_name = "ollama"
+    display_name = "Local Ollama"
+
     def __init__(self, settings: AppSettings) -> None:
         self.settings = settings
+
+    @property
+    def model_name(self) -> str:
+        return str(self.settings.ollama_model)
 
     @property
     def tags_url(self) -> str:
@@ -32,7 +39,7 @@ class OllamaClient:
         }
 
     def check_model_available(self) -> None:
-        model_name = str(self.settings.ollama_model)
+        model_name = self.model_name
         available = self.installed_models()
 
         if model_name not in available:
@@ -44,7 +51,7 @@ class OllamaClient:
 
     def build_payload(self, question: str, num_predict: int | None = None) -> dict:
         payload = {
-            "model": str(self.settings.ollama_model),
+            "model": self.model_name,
             "system": SYSTEM_PROMPT,
             "prompt": question,
             "stream": False,
@@ -81,7 +88,7 @@ class OllamaClient:
                 f"model returned an empty warm-up response; done_reason={done_reason}"
             )
 
-        return f"model loaded and ready: {self.settings.ollama_model}"
+        return f"Local Ollama model loaded and ready: {self.model_name}"
 
     def ask(self, question: str) -> str:
         payload = self.build_payload(question)

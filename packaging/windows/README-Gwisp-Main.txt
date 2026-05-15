@@ -20,7 +20,11 @@ Requirements
 - Python 3.11 or newer.
 - Internet access during install to download Python packages.
 - Tesseract OCR installed on the main machine.
-- Ollama installed on the main machine, with the configured model downloaded.
+- One AI provider:
+  - Local mode: Ollama installed on the main machine, with the configured model
+    downloaded.
+  - Cloud mode: llm_provider set to cloud, cloud_api_url/cloud_model configured,
+    and GWISP_CLOUD_API_KEY set before running Gwisp.
 
 Install
 1. Extract this ZIP.
@@ -34,6 +38,7 @@ Optional shortcut install:
 
 First run
 1. Open Gwisp.
-2. Click "Check setup".
-3. Click "Load model".
-4. Use "OCR box", "Select capture window", or "Sync OCR".
+2. Confirm the AI provider line shows Local Ollama or Cloud API.
+3. Click "Check setup".
+4. Click "Load model".
+5. Use "OCR box", "Select capture window", or "Sync OCR".

@@ -47,7 +47,7 @@ from PySide6.QtWidgets import (
 )
 
 from gwisp.adapters.app_event_log import ApplicationEventLog
-from gwisp.adapters.llm_ollama import OllamaClient
+from gwisp.adapters.llm_clients import create_llm_client
 from gwisp.adapters.log_store import FileLogStore
 from gwisp.adapters.ocr_tesseract import TesseractOcr
 from gwisp.adapters.screen_mss import MssScreenCapture
@@ -96,8 +96,8 @@ MAIN_BUTTONS = [
     ("button.save_log_now", "save_log_now", 112),
     ("button.test_ocr_once", "test_ocr_once", 112),
     ("button.check_setup", "check_setup", 100),
-    ("button.load_model", "load_ollama_model", 104),
-    ("button.test_ollama", "test_ollama", 112),
+    ("button.load_model", "load_ai_model", 104),
+    ("button.test_ai_provider", "test_ai_provider", 112),
     ("button.support", "show_support", 88),
 ]
 
@@ -452,12 +452,12 @@ class GwispWindow(QMainWindow):
         self.tesseract_path = self.ocr_engine.tesseract_path
         self.screen_capture = MssScreenCapture()
         self.window_capture = WindowCapture()
-        self.ollama_client = OllamaClient(self.settings)
+        self.llm_client = create_llm_client(self.settings)
         self.pipeline = QAPipeline(
             settings=self.settings,
             screen_capture=self.screen_capture,
             ocr_engine=self.ocr_engine,
-            llm_client=self.ollama_client,
+            llm_client=self.llm_client,
         )
         self.log_store = FileLogStore(self.output_log_path)
 
@@ -466,7 +466,7 @@ class GwispWindow(QMainWindow):
         self.ocr_thread: threading.Thread | None = None
         self.processing_lock = threading.Lock()
         self.processing = False
-        self.ollama_ready = False
+        self.llm_ready = False
         self.capture_box: CaptureBoxWindow | None = None
         self.capture_region_lock = threading.Lock()
         self.active_capture_region = self.settings.region
@@ -494,12 +494,26 @@ class GwispWindow(QMainWindow):
         self.event_log.info(
             "app.ready",
             tesseract_path=self.tesseract_path,
-            ollama_model=self.settings.ollama_model,
+            llm_provider=self.llm_provider_name(),
+            llm_model=self.llm_model_name(),
             ocr_lang=self.settings.ocr_lang,
         )
 
     def tr(self, key: str, **format_values: object) -> str:
         return translate(self.language, key, **format_values)
+
+    def llm_provider_name(self) -> str:
+        return str(getattr(self.llm_client, "display_name", self.settings.llm_provider))
+
+    def llm_model_name(self) -> str:
+        return str(getattr(self.llm_client, "model_name", "configured model"))
+
+    def llm_provider_summary(self) -> str:
+        return self.tr(
+            "llm.provider",
+            provider=self.llm_provider_name(),
+            model=self.llm_model_name(),
+        )
 
     def configure_xp_style(self) -> None:
         app = QApplication.instance()
@@ -519,6 +533,12 @@ class GwispWindow(QMainWindow):
                 background: {XP_INFO};
                 color: {XP_TEXT};
                 border: 1px solid {XP_TEXT};
+                padding: 3px 6px;
+            }}
+            QLabel#providerLabel {{
+                background: {XP_WINDOW};
+                color: {XP_TEXT};
+                border: 1px solid {XP_CONTROL_DARK};
                 padding: 3px 6px;
             }}
             QFrame#buttonBar {{
@@ -607,6 +627,11 @@ class GwispWindow(QMainWindow):
         self.warning_label.setObjectName("warningLabel")
         self.warning_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         root_layout.addWidget(self.warning_label)
+
+        self.provider_label = QLabel(self.llm_provider_summary())
+        self.provider_label.setObjectName("providerLabel")
+        self.provider_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        root_layout.addWidget(self.provider_label)
 
         button_bar = QFrame()
         button_bar.setObjectName("buttonBar")
@@ -714,6 +739,7 @@ class GwispWindow(QMainWindow):
     def apply_language(self) -> None:
         self.setWindowTitle(self.tr("window.main.title"))
         self.warning_label.setText(self.tr("warning.main"))
+        self.provider_label.setText(self.llm_provider_summary())
         for text_key, button in self.toolbar_buttons.items():
             button.setText(self.tr(text_key))
 
@@ -1023,16 +1049,16 @@ class GwispWindow(QMainWindow):
         self.event_log.info(
             "capture.start.requested",
             capture_mode=self.capture_mode(),
-            ollama_ready=self.ollama_ready,
+            llm_ready=self.llm_ready,
         )
         if self.ocr_thread and self.ocr_thread.is_alive():
             self.event_log.warning("capture.start.ignored_already_running")
             self.set_status("capture is already running")
             return
 
-        if self.settings.ollama_auto_warmup and not self.ollama_ready:
-            self.event_log.info("capture.start.waiting_for_ollama_warmup")
-            self.load_ollama_model(auto_start=True)
+        if self.settings.llm_auto_warmup and not self.llm_ready:
+            self.event_log.info("capture.start.waiting_for_llm_warmup")
+            self.load_ai_model(auto_start=True)
             return
 
         self.start_capture_now()
@@ -1079,7 +1105,7 @@ class GwispWindow(QMainWindow):
     def check_setup(self) -> None:
         self.event_log.info("setup_check.requested")
         self.set_status("checking setup")
-        self.replace_text(self.answer_text, "Checking local setup...")
+        self.replace_text(self.answer_text, "Checking Gwisp setup...")
         threading.Thread(
             target=self.check_setup_worker,
             name="Gwisp-SetupCheck",
@@ -1118,52 +1144,74 @@ class GwispWindow(QMainWindow):
                 "[FAIL] Tesseract not found. Install it or enable/use a valid tesseract_cmd."
             )
 
-        try:
-            models = self.ollama_client.installed_models()
-            model_name = self.settings.ollama_model
-            lines.append(f"[OK] Ollama API: {self.ollama_client.tags_url}")
-            if model_name in models:
-                lines.append(f"[OK] Ollama model installed: {model_name}")
+        lines.append("")
+        lines.append(f"[OK] AI provider: {self.llm_provider_name()}")
+        lines.append(f"[OK] AI model: {self.llm_model_name()}")
+
+        if getattr(self.llm_client, "provider_name", "") == "ollama":
+            try:
+                models = self.llm_client.installed_models()
+                model_name = self.llm_model_name()
+                lines.append(f"[OK] Ollama API: {self.llm_client.tags_url}")
+                if model_name in models:
+                    lines.append(f"[OK] Ollama model installed: {model_name}")
+                else:
+                    ok = False
+                    available = ", ".join(sorted(models)) or "(none)"
+                    lines.append(f"[FAIL] Ollama model missing: {model_name}")
+                    lines.append(f"       Available models: {available}")
+                    lines.append(f"       Run: ollama pull {model_name}")
+            except Exception as exc:
+                ok = False
+                lines.append(f"[FAIL] Ollama API is not reachable: {exc}")
+        else:
+            if self.settings.cloud_api_url.strip():
+                lines.append(f"[OK] Cloud API endpoint: {self.settings.cloud_api_url}")
             else:
                 ok = False
-                available = ", ".join(sorted(models)) or "(none)"
-                lines.append(f"[FAIL] Ollama model missing: {model_name}")
-                lines.append(f"       Available models: {available}")
-                lines.append(f"       Run: ollama pull {model_name}")
-        except Exception as exc:
-            ok = False
-            lines.append(f"[FAIL] Ollama API is not reachable: {exc}")
+                lines.append("[FAIL] Cloud API endpoint is empty: set cloud_api_url")
+
+            if self.settings.cloud_api_key.strip():
+                lines.append("[OK] Cloud API key configured")
+            else:
+                ok = False
+                lines.append("[FAIL] Cloud API key missing: set GWISP_CLOUD_API_KEY")
 
         lines.append("")
         lines.append("Result: OK" if ok else "Result: action needed")
         self.event_log.info("setup_check.finished", success=ok)
         self.ui_queue.put(("setup_report", "\n".join(lines), ok))
 
-    def load_ollama_model(self, auto_start: bool = False) -> None:
+    def load_ai_model(self, auto_start: bool = False) -> None:
         if not self.try_begin_processing():
             self.event_log.warning(
-                "ollama.warmup.ignored_busy",
+                "llm.warmup.ignored_busy",
                 auto_start=auto_start,
             )
-            self.set_status("Ollama is already busy; load request ignored")
+            self.set_status("AI provider is already busy; load request ignored")
             return
 
-        model_name = self.settings.ollama_model
+        model_name = self.llm_model_name()
+        provider_name = self.llm_provider_name()
         self.event_log.info(
-            "ollama.warmup.started",
+            "llm.warmup.started",
+            provider=provider_name,
             model=model_name,
             auto_start=auto_start,
         )
-        self.set_status(f"loading Ollama model {model_name}")
-        self.replace_text(self.answer_text, f"Loading Ollama model: {model_name}\n\nPlease wait...")
+        self.set_status(f"loading {provider_name} model {model_name}")
+        self.replace_text(
+            self.answer_text,
+            f"Loading {provider_name} model: {model_name}\n\nPlease wait...",
+        )
         threading.Thread(
-            target=self.ollama_warmup_worker,
+            target=self.llm_warmup_worker,
             args=(auto_start,),
-            name="Gwisp-OllamaWarmup",
+            name="Gwisp-LlmWarmup",
             daemon=True,
         ).start()
 
-    def test_ollama(self) -> None:
+    def test_ai_provider(self) -> None:
         test_question = (
             "Authorized practice quiz. Which option is correct?\n"
             "A) 2 + 2 = 5\n"
@@ -1172,39 +1220,43 @@ class GwispWindow(QMainWindow):
             "Return the correct alternative first."
         )
         if not self.try_begin_processing():
-            self.event_log.warning("ollama.test.ignored_busy")
-            self.set_status("Ollama is still responding; test ignored")
+            self.event_log.warning("llm.test.ignored_busy")
+            self.set_status("AI provider is still responding; test ignored")
             return
 
-        self.event_log.info("ollama.test.started")
-        self.set_status("testing Ollama")
-        self.replace_text(self.answer_text, "Testing Ollama...")
+        self.event_log.info(
+            "llm.test.started",
+            provider=self.llm_provider_name(),
+            model=self.llm_model_name(),
+        )
+        self.set_status("testing AI provider")
+        self.replace_text(self.answer_text, f"Testing {self.llm_provider_name()}...")
         threading.Thread(
-            target=self.ollama_worker,
+            target=self.llm_worker,
             args=(test_question, datetime.datetime.now(), True),
-            name="Gwisp-TestOllama",
+            name="Gwisp-TestLlm",
             daemon=True,
         ).start()
 
-    def ollama_warmup_worker(self, auto_start: bool) -> None:
+    def llm_warmup_worker(self, auto_start: bool) -> None:
         try:
-            status = self.ollama_client.warm_up()
+            status = self.llm_client.warm_up()
             success = True
-            self.ollama_ready = True
-            self.event_log.info("ollama.warmup.finished", success=True, auto_start=auto_start)
+            self.llm_ready = True
+            self.event_log.info("llm.warmup.finished", success=True, auto_start=auto_start)
         except Exception as exc:
-            status = f"Ollama load failed: {exc}"
+            status = f"{self.llm_provider_name()} load failed: {exc}"
             success = False
-            self.ollama_ready = False
+            self.llm_ready = False
             self.event_log.exception(
-                "ollama.warmup.error",
+                "llm.warmup.error",
                 exc,
                 auto_start=auto_start,
             )
         finally:
             self.end_processing()
 
-        self.ui_queue.put(("ollama_ready", success, status, auto_start))
+        self.ui_queue.put(("llm_ready", success, status, auto_start))
 
     def ocr_loop(self) -> None:
         self.event_log.info(
@@ -1272,11 +1324,11 @@ class GwispWindow(QMainWindow):
         question = decision.question
         if not self.try_begin_processing():
             self.event_log.warning(
-                "ocr.question.ignored_ollama_busy",
+                "ocr.question.ignored_llm_busy",
                 raw_length=len(raw_text),
                 cleaned_length=len(question),
             )
-            self.enqueue_status("Ollama is still responding; new OCR text ignored")
+            self.enqueue_status("AI provider is still responding; new OCR text ignored")
             return
 
         self.pipeline.remember_question(question)
@@ -1286,13 +1338,13 @@ class GwispWindow(QMainWindow):
             captured_at=captured_at.isoformat(timespec="seconds"),
         )
         self.ui_queue.put(("question", question))
-        self.ui_queue.put(("answer", "Waiting for Ollama response..."))
+        self.ui_queue.put(("answer", f"Waiting for {self.llm_provider_name()} response..."))
         self.enqueue_status(decision.message)
 
         threading.Thread(
-            target=self.ollama_worker,
+            target=self.llm_worker,
             args=(question, captured_at, False),
-            name="Gwisp-Ollama",
+            name="Gwisp-Llm",
             daemon=True,
         ).start()
 
@@ -1307,22 +1359,23 @@ class GwispWindow(QMainWindow):
         with self.processing_lock:
             self.processing = False
 
-    def ollama_worker(self, question: str, captured_at: datetime.datetime, is_test: bool) -> None:
+    def llm_worker(self, question: str, captured_at: datetime.datetime, is_test: bool) -> None:
         try:
             answer, captured_at = self.pipeline.answer_question(question, captured_at)
-            if not answer.startswith("(Ollama") and not answer.startswith("Ollama error:"):
-                self.ollama_ready = True
+            if not answer.startswith("("):
+                self.llm_ready = True
             self.event_log.info(
-                "ollama.answer.finished",
+                "llm.answer.finished",
                 is_test=is_test,
+                provider=self.llm_provider_name(),
                 question_length=len(question),
                 answer_length=len(answer),
             )
         except Exception as exc:
-            answer = f"Ollama error: {exc}"
-            self.ollama_ready = False
+            answer = f"{self.llm_provider_name()} error: {exc}"
+            self.llm_ready = False
             self.event_log.exception(
-                "ollama.answer.error",
+                "llm.answer.error",
                 exc,
                 is_test=is_test,
                 question_length=len(question),
@@ -1364,7 +1417,7 @@ class GwispWindow(QMainWindow):
             _, report, success = event
             self.replace_text(self.answer_text, report)
             self.set_status("setup check OK" if success else "setup check found issues")
-        elif event_type == "ollama_ready":
+        elif event_type == "llm_ready":
             _, success, status, auto_start = event
             self.replace_text(self.answer_text, status)
             self.set_status(status)
@@ -1375,11 +1428,11 @@ class GwispWindow(QMainWindow):
             self.replace_text(self.answer_text, answer)
             self.add_answer_history_entry(answer)
             self.add_log_entry(captured_at, question, answer)
-            self.set_status("Ollama response received")
+            self.set_status("AI response received")
         elif event_type == "test_answer":
             _, _question, answer, _captured_at = event
             self.replace_text(self.answer_text, answer)
-            self.set_status("Ollama test finished")
+            self.set_status("AI test finished")
 
     @staticmethod
     def replace_text(widget: QTextEdit, value: str) -> None:

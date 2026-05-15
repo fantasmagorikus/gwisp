@@ -28,7 +28,10 @@ TRANSLATIONS = {
         "language.label": "Language",
         "window.main.title": "Gwisp - Alpha build 1.0.3",
         "window.sync.title": "Gwisp Sync OCR - Alpha build 1.0.3",
-        "warning.main": "Use OCR box over the source question. Keep this window open for answers.",
+        "warning.main": (
+            "Use OCR box over the source question. Keep this window open for answers "
+            "from the selected AI provider."
+        ),
         "warning.sync": (
             "Click Sync OCR, then paste the shown details into Gwisp on the first machine."
         ),
@@ -43,7 +46,8 @@ TRANSLATIONS = {
         "button.test_ocr_once": "Test OCR once",
         "button.check_setup": "Check setup",
         "button.load_model": "Load model",
-        "button.test_ollama": "Test Ollama",
+        "button.test_ai_provider": "Test AI",
+        "llm.provider": "AI provider: {provider} ({model})",
         "button.support": "Support",
         "group.question": "Question obtained by OCR",
         "group.answer": "AI answer",
@@ -85,7 +89,10 @@ TRANSLATIONS = {
         "language.label": "Idioma",
         "window.main.title": "Gwisp - Alpha build 1.0.3",
         "window.sync.title": "Gwisp Sync OCR - Alpha build 1.0.3",
-        "warning.main": "Use a caixa OCR sobre a pergunta de origem. Mantenha esta janela aberta.",
+        "warning.main": (
+            "Use a caixa OCR sobre a pergunta de origem. Mantenha esta janela aberta "
+            "para respostas do provedor de IA selecionado."
+        ),
         "warning.sync": (
             "Clique em Sync OCR e cole os detalhes mostrados no Gwisp da primeira maquina."
         ),
@@ -100,7 +107,8 @@ TRANSLATIONS = {
         "button.test_ocr_once": "Testar OCR",
         "button.check_setup": "Checar setup",
         "button.load_model": "Carregar modelo",
-        "button.test_ollama": "Testar Ollama",
+        "button.test_ai_provider": "Testar IA",
+        "llm.provider": "Provedor de IA: {provider} ({model})",
         "button.support": "Apoiar",
         "group.question": "Pergunta obtida por OCR",
         "group.answer": "Resposta da IA",
@@ -140,7 +148,10 @@ TRANSLATIONS = {
         "language.label": "Sprache",
         "window.main.title": "Gwisp - Alpha build 1.0.3",
         "window.sync.title": "Gwisp Sync OCR - Alpha build 1.0.3",
-        "warning.main": "OCR-Feld ueber die Quellfrage legen. Dieses Fenster offen lassen.",
+        "warning.main": (
+            "OCR-Feld ueber die Quellfrage legen. Dieses Fenster fuer Antworten "
+            "des ausgewaehlten KI-Anbieters offen lassen."
+        ),
         "warning.sync": (
             "Auf Sync OCR klicken und die Daten in Gwisp auf dem ersten Rechner einfuegen."
         ),
@@ -155,7 +166,8 @@ TRANSLATIONS = {
         "button.test_ocr_once": "OCR testen",
         "button.check_setup": "Setup pruefen",
         "button.load_model": "Modell laden",
-        "button.test_ollama": "Ollama testen",
+        "button.test_ai_provider": "KI testen",
+        "llm.provider": "KI-Anbieter: {provider} ({model})",
         "button.support": "Unterstuetzen",
         "group.question": "Per OCR erkannte Frage",
         "group.answer": "KI-Antwort",

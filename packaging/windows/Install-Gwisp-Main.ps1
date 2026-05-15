@@ -143,5 +143,5 @@ Write-Host "Gwisp Main installed successfully."
 Write-Host "Install folder: $InstallDir"
 Write-Host "Launcher: $LauncherPath"
 Write-Host ""
-Write-Host "Before first use, install/configure Tesseract OCR and Ollama on this machine."
+Write-Host "Before first use, install/configure Tesseract OCR and choose Local Ollama or Cloud API."
 

@@ -55,7 +55,7 @@ class QAPipeline:
 
         return QuestionDecision(
             status="accepted",
-            message="new OCR question sent to Ollama",
+            message="new OCR question sent to AI provider",
             question=question,
         )
 

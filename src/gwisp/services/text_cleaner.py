@@ -13,7 +13,7 @@ APP_LOOP_STRONG_MARKERS = [
     "status:",
     "save log now",
     "test ocr once",
-    "test ollama",
+    "test ai",
     "check setup",
     "load model",
     "conectar",

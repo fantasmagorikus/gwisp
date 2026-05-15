@@ -41,7 +41,8 @@ Monero: 46qeT3qhJgfYditXfaSqM1enNAottE26EQczmtNbiT57iJzFRHxuBjQN3jdtM8FPwFMRtQYW
 Install options:
 
 - Os dois: installs the main Gwisp app and the Sync OCR companion.
-- Somente app principal completo: installs only the main OCR + Ollama app.
+- Somente app principal completo: installs only the main OCR app with support
+  for local Ollama or a cloud AI API provider.
 - Somente Sync OCR: installs only the secondary-machine capture companion.
 
 Manual install option:
@@ -55,6 +56,12 @@ powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-SyncOCR.ps1 -Language e
 Optional shortcuts:
 
 powershell -ExecutionPolicy Bypass -File .\Install-Gwisp-Main.ps1 -Language en -CreateShortcuts
+
+AI provider options for the main app:
+
+- Local Ollama is the default. Install Ollama and download the configured model.
+- Cloud API mode uses llm_provider=cloud, cloud_api_url, cloud_model, and
+  GWISP_CLOUD_API_KEY. Do not commit real API keys.
 
 The EXE first looks for the ZIP packages beside itself. If they are not there,
 it downloads them from the latest GitHub release:

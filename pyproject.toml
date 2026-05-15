@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gwisp"
 version = "1.0.3"
-description = "Gwisp alpha build 1.0.3, Windows 11-tested OCR desktop tool with Ollama integration and EN/PT/DE UI."
+description = "Gwisp alpha build 1.0.3, Windows 11-tested OCR desktop tool with Ollama or cloud AI provider support and EN/PT/DE UI."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
