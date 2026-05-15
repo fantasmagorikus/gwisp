@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gwisp"
+version = "1.0.3"
+description = "Gwisp alpha build 1.0.3, Windows 11-tested OCR desktop tool with Ollama integration and EN/PT/DE UI."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "mss>=9.0.1",
+  "pillow>=10.0.0",
+  "pydantic>=2.7.0",
+  "pydantic-settings>=2.3.0",
+  "PySide6>=6.8.0",
+  "pywin32>=306; platform_system == 'Windows'",
+  "pytesseract>=0.3.10",
+  "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+  "ruff>=0.5.0",
+]
+
+[project.scripts]
+gwisp = "gwisp.main:main"
+gwisp-sync-ocr = "gwisp.ui.sync_ocr_app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gwisp = ["assets/*.ico"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["docs", "artifacts", ".tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

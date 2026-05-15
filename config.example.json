@@ -1,0 +1,30 @@
+{
+  "language": "en",
+  "region": {
+    "left": 200,
+    "top": 150,
+    "width": 1100,
+    "height": 650
+  },
+  "interval_seconds": 1.5,
+  "min_chars": 15,
+  "duplicate_threshold": 0.92,
+  "ocr_lang": "eng+por",
+  "tesseract_cmd": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+  "tesseract_auto_detect": true,
+  "ollama_url": "http://localhost:11434/api/generate",
+  "ollama_model": "gemma4:e4b",
+  "ollama_num_gpu": 32,
+  "ollama_num_ctx": 2048,
+  "ollama_num_predict": 100,
+  "ollama_temperature": 0.1,
+  "ollama_auto_warmup": true,
+  "ollama_keep_alive": "30m",
+  "ollama_connect_timeout_seconds": 10,
+  "ollama_request_timeout_seconds": 240,
+  "always_on_top": true,
+  "output_log_file": "gwisp_log.txt",
+  "event_log_file": "logs/gwisp_events.log",
+  "connect_command": "",
+  "connect_start_delay_seconds": 3.0
+}
